@@ -42,26 +42,70 @@
 <script src='lib/state-machine.js'></script>
 <script>
 
+
+    var fsm = new StateMachine({
+        init: 'stop',
+        transitions: [
+            {name: 'running', from: 'stop', to: 'start'},
+            {name: 'waiting', from: 'start', to: 'cleanup'},
+            {name: 'ending', from: 'cleanup', to: 'stop'},
+        ],
+        methods: {
+            onRunning: function () {
+                console.log('Dishwasher started')
+                $("#show-free").hide();
+                $("#show-busy").show();
+                $("#show-ausraumen").hide();
+            },
+            onWaiting: function () {
+                console.log('Dishwasher is done and waits to get emptied')
+                $("#show-free").hide();
+                $("#show-busy").hide();
+                $("#show-ausraumen").show();
+            },
+            onEnding: function () {
+                console.log('Dishwasher is emptied and ready for a new run')
+                $("#show-free").show();
+                $("#show-busy").hide();
+                $("#show-ausraumen").hide();
+            }
+        }
+    });
+
+
     var wasRunningBefore = false;
     $(document).ready(function () {
         (function worker() {
+
+            console.log("state is: " + fsm.state)
+
+            fsm.running()
+
+            console.log("state is: " + fsm.state)
+
+            fsm.waiting()
+
+            console.log("state is: " + fsm.state)
+
+            fsm.ending()
+
+            console.log("state is: " + fsm.state)
 
 
             $.ajax({
                 url: 'http://localhost:10010/api/device/tiltswitchsensor', //Mock
                 //url: 'http://192.168.40.101:3011/sensor',
                 dataType: 'text',
-                timeout: 10000,
+                timeout: 3000,
                 method: 'GET',
-                crossDomain: true,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'GET',
-                },
                 success: function (data) {
                     console.log("Sensor value is:" + data);
                 },
                 error: function (xhr, status, error) {
+                    $("#loading").show();
+                    $("#show-free").hide();
+                    $("#show-busy").hide();
+                    $("#show-ausraumen").hide();
                     console.error("Request error: " + status);
                 }
             });
@@ -71,13 +115,8 @@
                 //url: 'http://192.168.40.101/api/device/wemodischwascher',
                 url: 'http://localhost:10010/api/device/wemodischwascher',
                 dataType: 'json',
-                timeout: 10000,
+                timeout: 3000,
                 method: 'GET',
-                crossDomain: true,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'GET',
-                },
                 success: function (data) {
                     var json = JSON.parse(data);
                     //console.log("Json is: " + json.wemodishwasher.currentpower)
@@ -85,22 +124,16 @@
                     $("#loading").hide();
                     if (json.wemodishwasher.currentpower > 1000) { //busy if > 7,30 Watt
                         console.log("Dishwasher is on with current power " + json.wemodishwasher.currentpower + " Milliwatt. wasRunningBefore is " + wasRunningBefore);
-                        $("#show-free").hide();
-                        $("#show-busy").show();
-                        $("#show-ausraumen").hide();
+                        fsm.running()
                         wasRunningBefore = true;
                     }
                     else if ((json.wemodishwasher.currentpower > 400) && (json.wemodishwasher.currentpower < 750) && (wasRunningBefore == true)) {
                         console.log("Dishwasher is done and running with " + json.wemodishwasher.currentpower + " Milliwatt. wasRunningBefore is " + wasRunningBefore);
-                        $("#show-free").hide();
-                        $("#show-busy").hide();
-                        $("#show-ausraumen").show();
+                        fsm.waiting()
                     }
                     else {
                         console.log("Dishwasher is not runnning with current power " + json.wemodishwasher.currentpower + " Milliwatt. wasRunningBefore is " + wasRunningBefore);
-                        $("#show-free").show();
-                        $("#show-busy").hide();
-                        $("#show-ausraumen").hide();
+                        fsm.ending()
                         wasRunningBefore = false;
                     }
                 },
@@ -108,7 +141,7 @@
                     $("#loading").show();
                     $("#show-free").hide();
                     $("#show-busy").hide();
-
+                    $("#show-ausraumen").hide();
                     console.error("Request error: " + status);
                 }
             });
