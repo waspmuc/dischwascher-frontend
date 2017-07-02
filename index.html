@@ -68,6 +68,9 @@
                 $("#show-free").show();
                 $("#show-busy").hide();
                 $("#show-ausraumen").hide();
+            },
+            onInvalidTransition: function(transition, from, to) {
+                throw new Exception("transition not allowed from that state");
             }
         }
     });
@@ -79,7 +82,7 @@
 
             console.log("state is: " + fsm.state)
 
-            fsm.running()
+/*            fsm.running()
 
             console.log("state is: " + fsm.state)
 
@@ -89,7 +92,7 @@
 
             fsm.ending()
 
-            console.log("state is: " + fsm.state)
+            console.log("state is: " + fsm.state)*/
 
 
             $.ajax({
