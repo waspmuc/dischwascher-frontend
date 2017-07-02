@@ -49,51 +49,48 @@
             {name: 'running', from: 'stop', to: 'start'},
             {name: 'waiting', from: 'start', to: 'cleanup'},
             {name: 'ending', from: 'cleanup', to: 'stop'},
+            {name: 'ending', from: 'stop', to: 'stop'},
+            {name: 'reset', from: 'stop', to: 'stop' },
+            {name: 'reset', from: 'start', to: 'stop' },
+            {name: 'reset', from: 'cleanup', to: 'stop'}
         ],
         methods: {
             onRunning: function () {
                 console.log('Dishwasher started')
-                $("#show-free").hide();
                 $("#show-busy").show();
+                $("#show-free").hide();
                 $("#show-ausraumen").hide();
+                $("#loading").hide();
             },
             onWaiting: function () {
                 console.log('Dishwasher is done and waits to get emptied')
+                $("#show-ausraumen").show();
                 $("#show-free").hide();
                 $("#show-busy").hide();
-                $("#show-ausraumen").show();
+                $("#loading").hide();
             },
             onEnding: function () {
                 console.log('Dishwasher is emptied and ready for a new run')
                 $("#show-free").show();
                 $("#show-busy").hide();
                 $("#show-ausraumen").hide();
+                $("#loading").hide();
+
             },
             onInvalidTransition: function(transition, from, to) {
-                throw new Exception("transition not allowed from that state");
+                console.error("transition not allowed from state '" + from + "'."
+                )
             }
         }
     });
 
-
-    var wasRunningBefore = false;
     $(document).ready(function () {
+
+        function init(){
+            fsm.reset() // reset state machine on refresh
+        }
+
         (function worker() {
-
-            console.log("state is: " + fsm.state)
-
-/*            fsm.running()
-
-            console.log("state is: " + fsm.state)
-
-            fsm.waiting()
-
-            console.log("state is: " + fsm.state)
-
-            fsm.ending()
-
-            console.log("state is: " + fsm.state)*/
-
 
             $.ajax({
                 url: 'http://localhost:10010/api/device/tiltswitchsensor', //Mock
@@ -121,24 +118,26 @@
                 timeout: 3000,
                 method: 'GET',
                 success: function (data) {
-                    var json = JSON.parse(data);
-                    //console.log("Json is: " + json.wemodishwasher.currentpower)
 
+                    //on each success
+                    var response = JSON.parse(data);
                     $("#loading").hide();
-                    if (json.wemodishwasher.currentpower > 1000) { //busy if > 7,30 Watt
-                        console.log("Dishwasher is on with current power " + json.wemodishwasher.currentpower + " Milliwatt. wasRunningBefore is " + wasRunningBefore);
-                        //Todo: Check if transition is already active, before activating again
+                    //console.log("Json is: " + response.wemodishwasher.currentpower)
+
+                    if (response.wemodishwasher.currentpower > 1000) { //busy if > 7,30 Watt
+                        console.log("Dishwasher is on with current power " + response.wemodishwasher.currentpower + " Milliwatt")
+                        console.log("Transit state to running")
                         fsm.running()
-                        wasRunningBefore = true;
                     }
-                    else if ((json.wemodishwasher.currentpower > 400) && (json.wemodishwasher.currentpower < 750) && (wasRunningBefore == true)) {
-                        console.log("Dishwasher is done and running with " + json.wemodishwasher.currentpower + " Milliwatt. wasRunningBefore is " + wasRunningBefore);
+                    else if ((response.wemodishwasher.currentpower > 400) && (response.wemodishwasher.currentpower < 750)) {
+                        console.log("Dishwasher is done and running with " + response.wemodishwasher.currentpower + " Milliwatt.")
+                        console.log("Transit state to waiting")
                         fsm.waiting()
                     }
                     else {
-                        console.log("Dishwasher is not runnning with current power " + json.wemodishwasher.currentpower + " Milliwatt. wasRunningBefore is " + wasRunningBefore);
+                        console.log("Dishwasher is not runnning with current power " + response.wemodishwasher.currentpower + " Milliwatt.")
+                        console.log("Transit state to ending")
                         fsm.ending()
-                        wasRunningBefore = false;
                     }
                 },
                 error: function (xhr, status, error) {
