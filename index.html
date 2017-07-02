@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Dishwasher Monitor</title>
+    <style>
+        .fit {
+            width: 73%;
+            heigth: auto;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 10px;
+        }
+
+        .loader {
+            width: 20%;
+            heigth: auto;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 250px;
+        }
+
+    </style>
+</head>
+<body>
+<div id="show-free" style="display:none">
+    <img src="images/free.jpg" alt="Free" class="fit">
+</div>
+<div id="show-busy" style="display:none">
+    <img src="images/busy.jpg" alt="Busy" class="fit">
+</div>
+<div id="show-ausraumen" style="display:none">
+    <img src="images/ausraumen.jpg" alt="ausraumen" class="fit">
+</div>
+<div id="loading" style="display:block">
+    <img src="images/connecting.gif" width="200" alt="Busy" class="loader">
+</div>
+
+<script src="lib/jquery-3.1.1.js"></script>
+<script>
+
+    var wasRunningBefore = false;
+    $(document).ready(function () {
+        (function worker() {
+
+
+            $.ajax({
+                url: 'http://localhost:10010/api/device/tiltswitchsensor', //Mock
+                //url: 'http://192.168.40.101:3011/sensor',
+                dataType: 'text',
+                timeout: 10000,
+                method: 'GET',
+                crossDomain: true,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                },
+                success: function (data) {
+                    console.log("Sensor value is:" + data);
+                },
+                error: function (xhr, status, error) {
+                    console.error("Request error: " + status);
+                }
+            });
+
+
+            $.ajax({
+                //url: 'http://192.168.40.101/api/device/wemodischwascher',
+                url: 'http://localhost:10010/api/device/wemodischwascher',
+                dataType: 'json',
+                timeout: 10000,
+                method: 'GET',
+                crossDomain: true,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                },
+                success: function (data) {
+                    var json = JSON.parse(data);
+                    //console.log("Json is: " + json.wemodishwasher.currentpower)
+
+                    $("#loading").hide();
+                    if (json.wemodishwasher.currentpower > 1000) { //busy if > 7,30 Watt
+                        console.log("Dishwasher is on with current power " + json.wemodishwasher.currentpower + " Milliwatt. wasRunningBefore is " + wasRunningBefore);
+                        $("#show-free").hide();
+                        $("#show-busy").show();
+                        $("#show-ausraumen").hide();
+                        wasRunningBefore = true;
+                    }
+                    else if ((json.wemodishwasher.currentpower > 400) && (json.wemodishwasher.currentpower < 750) && (wasRunningBefore == true)) {
+                        console.log("Dishwasher is done and running with " + json.wemodishwasher.currentpower + " Milliwatt. wasRunningBefore is " + wasRunningBefore);
+                        $("#show-free").hide();
+                        $("#show-busy").hide();
+                        $("#show-ausraumen").show();
+                    }
+                    else {
+                        console.log("Dishwasher is not runnning with current power " + json.wemodishwasher.currentpower + " Milliwatt. wasRunningBefore is " + wasRunningBefore);
+                        $("#show-free").show();
+                        $("#show-busy").hide();
+                        $("#show-ausraumen").hide();
+                        wasRunningBefore = false;
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $("#loading").show();
+                    $("#show-free").hide();
+                    $("#show-busy").hide();
+
+                    console.error("Request error: " + status);
+                }
+            });
+            setTimeout(worker, 3500);
+        })();
+    });
+</script>
+</body>
+</html>

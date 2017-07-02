@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="lib/jquery-3.1.1.js"></script>
+    <script src="lib/moment.min.js"></script>
+    <meta charset="utf-8">
+    <link rel="stylesheet"
+          href="lib/chartist.min.css">
+    <title>Wemo Dishwasher Chart</title>
+</head>
+<body>
+<div class="ct-chart"></div>
+<script src="lib/chartist.min.js"></script>
+</body>
+
+<script>
+
+    $(document).ready(function () {
+
+        var wemoSeries = new Array();
+        var wemoLabels = new Array();
+
+        console.log("Called");
+        $.getJSON('http://192.168.40.101:3002/wemoentries', function (data) {
+
+
+            var i = 0;
+            //console.log("Data is: " + data.usercollection[1].wemodischwascher.currentpower);
+            $.each(data.usercollection, function (i, item) {
+                if (item.wemodischwascher.currentpower > 0) {
+                    if (i % 60 == 0) {
+                        var power = item.wemodischwascher.currentpower / 10000;
+                        console.log("Data is: " + power  + " Watt, " + item.wemodischwascher.createdAt);
+                        wemoSeries.push(power);
+                        var dateMonthAsWord = moment(item.wemodischwascher.createdAt).format('hh:mm');
+                        wemoLabels.push(dateMonthAsWord);
+                    }
+                }
+
+            });
+
+            var data = {
+                //labels: ['A', 'B', 'C','A', 'B', 'C','A', 'B', 'C','A', 'B', 'C','A', 'B', 'C','A', 'B', 'C','A', 'B', 'C','A', 'B', 'C','A', 'B', 'C','A', 'B', 'C','A', 'B', 'C'],
+                //series: [[10, 8, 14]]
+                labels: wemoLabels,
+                series: [wemoSeries]
+            };
+
+            var options = {
+                height: 2000,
+                width: 4000,
+                fullWidth: true,
+                showPoint: false,
+                showArea: true,
+                axisY: {
+                    onlyInteger: true,
+                    low: 0
+                },
+                /*       plugins: [
+                 Chartist.plugins.ctAxisTitle({
+                 axisX: {
+                 axisTitle: 'Time (mins)',
+                 axisClass: 'ct-axis-title',
+                 offset: {
+                 x: 0,
+                 y: 50
+                 },
+                 textAnchor: 'middle'
+                 },
+                 axisY: {
+                 axisTitle: 'Goals',
+                 axisClass: 'ct-axis-title',
+                 offset: {
+                 x: 0,
+                 y: 0
+                 },
+                 textAnchor: 'middle',
+                 flipTitle: false
+                 }
+                 })
+                 ]
+                 */
+            };
+
+            new Chartist.Line('.ct-chart', data, options);
+            console.log("done");
+        });
+
+
+    });
+
+
+</script>
+</html>
