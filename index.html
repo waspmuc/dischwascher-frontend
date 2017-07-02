@@ -127,6 +127,7 @@
                     $("#loading").hide();
                     if (json.wemodishwasher.currentpower > 1000) { //busy if > 7,30 Watt
                         console.log("Dishwasher is on with current power " + json.wemodishwasher.currentpower + " Milliwatt. wasRunningBefore is " + wasRunningBefore);
+                        //Todo: Check if transition is already active, before activating again
                         fsm.running()
                         wasRunningBefore = true;
                     }
