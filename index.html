@@ -43,6 +43,7 @@
 <script>
 
 
+    var dishwasherEmptied //hold state of tiltswitch sensor
     var fsm = new StateMachine({
         init: 'stop',
         transitions: [
@@ -75,7 +76,6 @@
                 $("#show-busy").hide();
                 $("#show-ausraumen").hide();
                 $("#loading").hide();
-
             },
             onInvalidTransition: function(transition, from, to) {
                 console.error("transition not allowed from state '" + from + "'."
@@ -99,7 +99,8 @@
                 timeout: 3000,
                 method: 'GET',
                 success: function (data) {
-                    console.log("Sensor value is:" + data);
+                    var dishwasherEmptied = (data == 'true');
+                    console.log("dishwasherEmptied is: " + dishwasherEmptied);
                 },
                 error: function (xhr, status, error) {
                     $("#loading").show();
@@ -126,17 +127,21 @@
 
                     if (response.wemodishwasher.currentpower > 1000) { //busy if > 7,30 Watt
                         console.log("Dishwasher is on with current power " + response.wemodishwasher.currentpower + " Milliwatt")
-                        console.log("Transit state to running")
+                        console.log("Transit from state '" + fsm.state + "' to 'start'")
                         fsm.running()
                     }
+
+                    //Todo: Implement "not changed since x seconds" in Tilt-Switch-Sensor Service
+                    //Todo: Remove differentiation between 400 & 750 Watt and check tiltswitchsensor instead.
+                    //TodO: If door is closed (sensor is true) --> empty it!  If door is open and not-changed-since is less than 30 --> empty it! Otherwise transit to state stop
                     else if ((response.wemodishwasher.currentpower > 400) && (response.wemodishwasher.currentpower < 750)) {
                         console.log("Dishwasher is done and running with " + response.wemodishwasher.currentpower + " Milliwatt.")
-                        console.log("Transit state to waiting")
+                        console.log("Transit from state '" + fsm.state + "' to 'cleanuo'")
                         fsm.waiting()
                     }
                     else {
                         console.log("Dishwasher is not runnning with current power " + response.wemodishwasher.currentpower + " Milliwatt.")
-                        console.log("Transit state to ending")
+                        console.log("Transit from state '" + fsm.state + "' to 'stop'")
                         fsm.ending()
                     }
                 },
@@ -148,6 +153,7 @@
                     console.error("Request error: " + status);
                 }
             });
+            //Todo: Increase timeout, when power consumption increases the first time over 1000 Watt
             setTimeout(worker, 3500);
         })();
     });
