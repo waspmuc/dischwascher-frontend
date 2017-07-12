@@ -42,14 +42,14 @@
 <script src='lib/state-machine.js'></script>
 <script>
 
+    var CONST_DEFAULT_RELOAD_TIME = 1500; //1,5 Sekunden
+    var CONST_RUNNING_RELOAD_TIME = 3000; // 10 Minuten
+    var CONST_THRESHHOLF_CONSUMPTION_NOT_RUNNING = 400;
 
     var dishwasherEmptied = false; //hold state of tiltswitch sensor
     var recentPower = 0;
     var previousPower = 0;
-    var CONST_DEFAULT_RELOAD_TIME = 1500; //1,5 Sekunden
-    var CONST_RUNNING_RELOAD_TIME = 3000; // 10 Minuten
     var reloadTime = CONST_DEFAULT_RELOAD_TIME;
-
     var fsm = new StateMachine({
         init: 'stop',
         transitions: [
@@ -165,7 +165,7 @@
                     //Todo: Implement "not changed since x seconds" in Tilt-Switch-Sensor Service
                     console.log("PreviousPower: " + previousPower + " recentPower: " + recentPower)
 
-                    if ((recentPower < 400) && (previousPower < 400)) {
+                    if ((recentPower < CONST_THRESHHOLF_CONSUMPTION_NOT_RUNNING) && (previousPower < CONST_THRESHHOLF_CONSUMPTION_NOT_RUNNING)) {
                         if ((dishwasherEmptied == false) && (fsm.state != "stop")) {
                             console.log("Dishwasher is done and running with " + response.wemodishwasher.currentpower + " Milliwatt.")
                             console.log("Transit from state '" + fsm.state + "' to 'cleanup'")
