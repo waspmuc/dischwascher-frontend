@@ -48,11 +48,13 @@
         init: 'stop',
         transitions: [
             {name: 'running', from: 'stop', to: 'start'},
+            {name: 'running', from: 'start', to: 'start'},
             {name: 'waiting', from: 'start', to: 'cleanup'},
+            {name: 'waiting', from: 'cleanup', to: 'cleanup'},
             {name: 'ending', from: 'cleanup', to: 'stop'},
             {name: 'ending', from: 'stop', to: 'stop'},
-            {name: 'reset', from: 'stop', to: 'stop' },
-            {name: 'reset', from: 'start', to: 'stop' },
+            {name: 'reset', from: 'stop', to: 'stop'},
+            {name: 'reset', from: 'start', to: 'stop'},
             {name: 'reset', from: 'cleanup', to: 'stop'}
         ],
         methods: {
@@ -77,7 +79,7 @@
                 $("#show-ausraumen").hide();
                 $("#loading").hide();
             },
-            onInvalidTransition: function(transition, from, to) {
+            onInvalidTransition: function (transition, from, to) {
                 console.error("transition not allowed from state '" + from + "'."
                 )
             }
@@ -86,7 +88,7 @@
 
     $(document).ready(function () {
 
-        function init(){
+        function init() {
             fsm.reset() // reset state machine on refresh
         }
 
@@ -95,12 +97,20 @@
             $.ajax({
                 url: 'http://localhost:10010/api/device/tiltswitchsensor', //Mock
                 //url: 'http://192.168.40.101:3011/sensor',
-                dataType: 'text',
+                dataType: 'json',
                 timeout: 3000,
                 method: 'GET',
                 success: function (data) {
-                    var dishwasherEmptied = (data == 'true');
-                    console.log("dishwasherEmptied is: " + dishwasherEmptied);
+
+                    var response = JSON.parse(data);
+                    console.log("response.recentState is: " + response.recentState)
+                    console.log("response.lastChanged is: " + response.lastChanged)
+                    if (response.recentState == 'true' && response.lastChanged >= 15) {
+                        dishwasherEmptied = true;
+                        console.log("dishwasherEmptied is: " + dishwasherEmptied);
+                    }
+                    else
+                        dishwasherEmptied = false;
                 },
                 error: function (xhr, status, error) {
                     $("#loading").show();
@@ -134,12 +144,12 @@
                     //Todo: Implement "not changed since x seconds" in Tilt-Switch-Sensor Service
                     //Todo: Remove differentiation between 400 & 750 Watt and check tiltswitchsensor instead.
                     //TodO: If door is closed (sensor is true) --> empty it!  If door is open and not-changed-since is less than 30 --> empty it! Otherwise transit to state stop
-                    else if ((response.wemodishwasher.currentpower > 400) && (response.wemodishwasher.currentpower < 750)) {
+                    else if ((response.wemodishwasher.currentpower < 400) && (dishwasherEmptied == false)) {
                         console.log("Dishwasher is done and running with " + response.wemodishwasher.currentpower + " Milliwatt.")
-                        console.log("Transit from state '" + fsm.state + "' to 'cleanuo'")
+                        console.log("Transit from state '" + fsm.state + "' to 'cleanup'")
                         fsm.waiting()
                     }
-                    else {
+                    else if ((response.wemodishwasher.currentpower < 400) && (dishwasherEmptied == true)) {
                         console.log("Dishwasher is not runnning with current power " + response.wemodishwasher.currentpower + " Milliwatt.")
                         console.log("Transit from state '" + fsm.state + "' to 'stop'")
                         fsm.ending()
