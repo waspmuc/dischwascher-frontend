@@ -43,8 +43,10 @@
 <script>
 
 
-    var dishwasherEmptied //hold state of tiltswitch sensor
-    var reloadTime = 3500;
+    var dishwasherEmptied; //hold state of tiltswitch sensor
+    var CONST_DEFAULT_RELOAD_TIME = 3500;
+    var CONST_RUNNING_RELOAD_TIME = 6000;
+    var reloadTime = CONST_DEFAULT_RELOAD_TIME;
 
     var fsm = new StateMachine({
         init: 'stop',
@@ -61,7 +63,8 @@
         ],
         methods: {
             onRunning: function () {
-                console.log('Dishwasher started')
+                console.log('Dishwasher started');
+                reloadTime = CONST_RUNNING_RELOAD_TIME;
                 $("#show-busy").show();
                 $("#show-free").hide();
                 $("#show-ausraumen").hide();
