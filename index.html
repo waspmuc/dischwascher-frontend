@@ -53,9 +53,9 @@
             {name: 'waiting', from: 'cleanup', to: 'cleanup'},
             {name: 'ending', from: 'cleanup', to: 'stop'},
             {name: 'ending', from: 'stop', to: 'stop'},
-            {name: 'reset', from: 'stop', to: 'stop'},
-            {name: 'reset', from: 'start', to: 'stop'},
-            {name: 'reset', from: 'cleanup', to: 'stop'}
+            {name: 'resetting', from: 'stop', to: 'stop'},
+            {name: 'resetting', from: 'start', to: 'stop'},
+            {name: 'resetting', from: 'cleanup', to: 'stop'}
         ],
         methods: {
             onRunning: function () {
@@ -79,6 +79,14 @@
                 $("#show-ausraumen").hide();
                 $("#loading").hide();
             },
+            onResetting: function () {
+                console.log('Resetting statemachine ')
+                $("#show-free").show();
+                $("#show-busy").hide();
+                $("#show-ausraumen").hide();
+                $("#loading").hide();
+            },
+
             onInvalidTransition: function (transition, from, to) {
                 console.error("transition not allowed from state '" + from + "'."
                 )
@@ -89,7 +97,7 @@
     $(document).ready(function () {
 
         function init() {
-            fsm.reset() // reset state machine on refresh
+            fsm.ending() // reset state machine on refresh
         }
 
         (function worker() {
@@ -103,11 +111,11 @@
                 success: function (data) {
 
                     var response = JSON.parse(data);
-                    console.log("response.recentState is: " + response.recentState)
-                    console.log("response.lastChanged is: " + response.lastChanged)
+                    //console.log("response.recentState is: " + response.recentState)
+                    //console.log("response.lastChanged is: " + response.lastChanged)
                     if (response.recentState == 'true' && response.lastChanged >= 15) {
                         dishwasherEmptied = true;
-                        console.log("dishwasherEmptied is: " + dishwasherEmptied);
+                      //  console.log("dishwasherEmptied is: " + dishwasherEmptied);
                     }
                     else
                         dishwasherEmptied = false;
@@ -144,7 +152,7 @@
                     //Todo: Implement "not changed since x seconds" in Tilt-Switch-Sensor Service
                     //Todo: Remove differentiation between 400 & 750 Watt and check tiltswitchsensor instead.
                     //TodO: If door is closed (sensor is true) --> empty it!  If door is open and not-changed-since is less than 30 --> empty it! Otherwise transit to state stop
-                    else if ((response.wemodishwasher.currentpower < 400) && (dishwasherEmptied == false)) {
+                    else if ((response.wemodishwasher.currentpower < 400) && (dishwasherEmptied == false) && (fsm.state != "stop")) {
                         console.log("Dishwasher is done and running with " + response.wemodishwasher.currentpower + " Milliwatt.")
                         console.log("Transit from state '" + fsm.state + "' to 'cleanup'")
                         fsm.waiting()
@@ -154,6 +162,8 @@
                         console.log("Transit from state '" + fsm.state + "' to 'stop'")
                         fsm.ending()
                     }
+                    else
+                        fsm.ending();
                 },
                 error: function (xhr, status, error) {
                     $("#loading").show();
