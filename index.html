@@ -44,6 +44,8 @@
 
 
     var dishwasherEmptied //hold state of tiltswitch sensor
+    var reloadTime = 3500;
+
     var fsm = new StateMachine({
         init: 'stop',
         transitions: [
@@ -74,13 +76,6 @@
             },
             onEnding: function () {
                 console.log('Dishwasher is emptied and ready for a new run')
-                $("#show-free").show();
-                $("#show-busy").hide();
-                $("#show-ausraumen").hide();
-                $("#loading").hide();
-            },
-            onResetting: function () {
-                console.log('Resetting statemachine ')
                 $("#show-free").show();
                 $("#show-busy").hide();
                 $("#show-ausraumen").hide();
@@ -150,8 +145,6 @@
                     }
 
                     //Todo: Implement "not changed since x seconds" in Tilt-Switch-Sensor Service
-                    //Todo: Remove differentiation between 400 & 750 Watt and check tiltswitchsensor instead.
-                    //TodO: If door is closed (sensor is true) --> empty it!  If door is open and not-changed-since is less than 30 --> empty it! Otherwise transit to state stop
                     else if ((response.wemodishwasher.currentpower < 400) && (dishwasherEmptied == false) && (fsm.state != "stop")) {
                         console.log("Dishwasher is done and running with " + response.wemodishwasher.currentpower + " Milliwatt.")
                         console.log("Transit from state '" + fsm.state + "' to 'cleanup'")
@@ -174,7 +167,7 @@
                 }
             });
             //Todo: Increase timeout, when power consumption increases the first time over 1000 Watt
-            setTimeout(worker, 3500);
+            setTimeout(worker, reloadTime);
         })();
     });
 </script>
