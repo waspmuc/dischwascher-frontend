@@ -43,15 +43,18 @@
 <script>
 
 
-    var dishwasherEmptied; //hold state of tiltswitch sensor
+    var dishwasherEmptied = false; //hold state of tiltswitch sensor
+    var recentPower = 0;
+    var previousPower = 0;
     var CONST_DEFAULT_RELOAD_TIME = 1500; //1,5 Sekunden
-    var CONST_RUNNING_RELOAD_TIME = 600000; // 10 Minuten
+    var CONST_RUNNING_RELOAD_TIME = 3000; // 10 Minuten
     var reloadTime = CONST_DEFAULT_RELOAD_TIME;
 
     var fsm = new StateMachine({
         init: 'stop',
         transitions: [
             {name: 'running', from: 'stop', to: 'start'},
+            {name: 'running', from: 'start', to: 'start'},
             {name: 'running', from: 'start', to: 'start'},
             {name: 'waiting', from: 'start', to: 'cleanup'},
             {name: 'waiting', from: 'cleanup', to: 'cleanup'},
@@ -92,11 +95,22 @@
         }
     });
 
+    setInterval(function () {
+        storePowerInformation()
+    }, 15000);
+
+    function storePowerInformation() {
+        console.log("Storing power consumption information. PreviousPower: " + previousPower + " recentPower: " + recentPower)
+        previousPower = recentPower;
+    }
+
     $(document).ready(function () {
 
         function init() {
             fsm.ending() // reset state machine on refresh
         }
+
+        init();
 
         (function worker() {
 
@@ -113,7 +127,7 @@
                     //console.log("response.lastChanged is: " + response.lastChanged)
                     if (response.recentState == 'true' && response.lastChanged >= 15) {
                         dishwasherEmptied = true;
-                      //  console.log("dishwasherEmptied is: " + dishwasherEmptied);
+                        //  console.log("dishwasherEmptied is: " + dishwasherEmptied);
                     }
                     else
                         dishwasherEmptied = false;
@@ -139,27 +153,30 @@
                     //on each success
                     var response = JSON.parse(data);
                     $("#loading").hide();
+                    recentPower = response.wemodishwasher.currentpower;
                     //console.log("Json is: " + response.wemodishwasher.currentpower)
 
-                    if (response.wemodishwasher.currentpower > 1000) { //busy if > 7,30 Watt
-                        console.log("Dishwasher is on with current power " + response.wemodishwasher.currentpower + " Milliwatt")
-                        console.log("Transit from state '" + fsm.state + "' to 'start'")
+                    if (response.wemodishwasher.currentpower > 1000) {
+                        console.log("Dishwasher is on with current power " + response.wemodishwasher.currentpower + " Milliwatt");
+                        console.log("Transit from state '" + fsm.state + "' to 'start'");
                         fsm.running()
                     }
 
                     //Todo: Implement "not changed since x seconds" in Tilt-Switch-Sensor Service
-                    else if ((response.wemodishwasher.currentpower < 400) && (dishwasherEmptied == false) && (fsm.state != "stop")) {
-                        console.log("Dishwasher is done and running with " + response.wemodishwasher.currentpower + " Milliwatt.")
-                        console.log("Transit from state '" + fsm.state + "' to 'cleanup'")
-                        fsm.waiting()
+                    console.log("PreviousPower: " + previousPower + " recentPower: " + recentPower)
+
+                    if ((recentPower < 400) && (previousPower < 400)) {
+                        if ((dishwasherEmptied == false) && (fsm.state != "stop")) {
+                            console.log("Dishwasher is done and running with " + response.wemodishwasher.currentpower + " Milliwatt.")
+                            console.log("Transit from state '" + fsm.state + "' to 'cleanup'")
+                            fsm.waiting()
+                        }
                     }
-                    else if ((response.wemodishwasher.currentpower < 400) && (dishwasherEmptied == true)) {
+                    if (dishwasherEmptied == true) {
                         console.log("Dishwasher is not runnning with current power " + response.wemodishwasher.currentpower + " Milliwatt.")
                         console.log("Transit from state '" + fsm.state + "' to 'stop'")
                         fsm.ending()
                     }
-                    else
-                        fsm.ending();
                 },
                 error: function (xhr, status, error) {
                     $("#loading").show();
@@ -169,8 +186,6 @@
                     console.error("Request error: " + status);
                 }
             });
-            //Todo: Increase timeout, when power consumption increases the first time over 1000 Watt
-            console.log("Reload time: + " + reloadTime)
             setTimeout(worker, reloadTime);
         })();
     });
