@@ -44,8 +44,8 @@
 
 
     var dishwasherEmptied; //hold state of tiltswitch sensor
-    var CONST_DEFAULT_RELOAD_TIME = 3500;
-    var CONST_RUNNING_RELOAD_TIME = 6000;
+    var CONST_DEFAULT_RELOAD_TIME = 1500; //1,5 Sekunden
+    var CONST_RUNNING_RELOAD_TIME = 600000; // 10 Minuten
     var reloadTime = CONST_DEFAULT_RELOAD_TIME;
 
     var fsm = new StateMachine({
@@ -170,6 +170,7 @@
                 }
             });
             //Todo: Increase timeout, when power consumption increases the first time over 1000 Watt
+            console.log("Reload time: + " + reloadTime)
             setTimeout(worker, reloadTime);
         })();
     });
