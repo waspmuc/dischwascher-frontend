@@ -46,7 +46,7 @@
     var CONST_DEFAULT_RELOAD_TIME = 1500; //1,5 Sekunden
     var CONST_RUNNING_RELOAD_TIME = 1500; //1,5 Sekunden
     var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 400;
-    var CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS = 30;
+    var CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS = 10;
     var CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED = 15;
     var CONST_RECORDING_INTERVAL_PREVIOUS_POWERCONSUMPTION = 15 * 1000; // 600000 = 10 minutes
 
@@ -134,49 +134,50 @@
         (function worker() {
 
             $.ajax({
-                url: 'http://localhost:10010/api/device/tiltswitchsensor', //Mock
-                //url: 'http://192.168.40.101:3011/sensor',
+                //url: 'http://localhost:10010/api/device/tiltswitchsensor', //Mock Development
+                url: 'http://192.168.40.101/api/tiltswitchsensorservice/',
                 dataType: 'json',
-                timeout: 3000,
+                timeout: 6000,
                 method: 'GET',
-                success: function (data) {
+                success: function (response) {
 
-                    var response = JSON.parse(data);
-                    //console.log("response.currentState is: " + response.currentState)
-                    //console.log("response.lastChanged is: " + response.lastChanged)
-                    if (response.currentState == 'true' && response.lastChanged >= CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED) {
+                    //var response = data;
+                    console.log("response.currentState is: " + response.currentState)
+                    console.log("response.lastChanged is: " + response.lastChanged)
+
+                    if (response.currentState == true && response.lastChanged >= CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED) {
                         dishwasherEmptied = true;
-                          //console.log("dishwasherEmptied is: " + dishwasherEmptied);
+                          console.log("dishwasherEmptied is: " + dishwasherEmptied);
                     }
                     else {
                         dishwasherEmptied = false;
-                        //console.log("dishwasherEmptied is: " + dishwasherEmptied);
+                        console.log("dishwasherEmptied is: " + dishwasherEmptied);
                     }
 
                 },
                 error: function (xhr, status, error) {
-                    $("#loading").show();
-                    $("#show-free").hide();
-                    $("#show-busy").hide();
-                    $("#show-ausraumen").hide();
+//                    $("#loading").show();
+//                    $("#show-free").hide();
+//                    $("#show-busy").hide();
+//                    $("#show-ausraumen").hide();
                     console.error("Request error: " + status);
                 }
             });
 
 
             $.ajax({
-                //url: 'http://192.168.40.101/api/device/wemodischwascher',
-                url: 'http://localhost:10010/api/device/wemodischwascher',
+                url: 'http://192.168.40.101/api/device/wemodischwascher',
+                //url: 'http://localhost:10010/api/device/wemodischwascher', //Mock Developmen
                 dataType: 'json',
                 timeout: 3000,
                 method: 'GET',
-                success: function (data) {
+                success: function (response) {
 
                     //on each success
-                    var response = JSON.parse(data);
+                    //var response = JSON.parse(data);
                     $("#loading").hide();
-                    currentPower = response.wemodishwasher.currentpower;
-                    console.log("Jsonresponse is: " + JSON.stringify(response.wemodishwasher))
+                    currentPower = response.currentpower;
+                    //console.log("Jsonresponse is: " + JSON.stringify(response))
 
 
                     //console.log("IsInTime: " + isWithinTimeWindow());
@@ -194,10 +195,9 @@
                         location.reload();
                     }
 
-                    //Todo: Implement "not changed since x seconds" in Tilt-Switch-Sensor Service
                     else if ((currentPower < CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) && (previousPower < CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING)) {
                         if ((dishwasherEmptied == false) && (fsm.state != "stopped")) {
-                            console.log("Dishwasher is done and running with " + response.wemodishwasher.currentpower + " Milliwatt.")
+                            console.log("Dishwasher is done and running with " + response.currentpower + " Milliwatt.")
                             console.log("Transit from state '" + fsm.state + "' to 'cleaned'")
                             fsm.cleanup()
                         }
@@ -206,16 +206,16 @@
                         console.log("No condition satisfies")
 
                     if (dishwasherEmptied == true) {
-                        console.log("Dishwasher is not runnning with current power " + response.wemodishwasher.currentpower + " Milliwatt.")
+                        console.log("Dishwasher is not runnning with current power " + response.currentpower + " Milliwatt.")
                         console.log("Transit from state '" + fsm.state + "' to 'stopped'")
                         fsm.end()
                     }
                 },
                 error: function (xhr, status, error) {
-                    $("#loading").show();
                     $("#show-free").hide();
                     $("#show-busy").hide();
                     $("#show-ausraumen").hide();
+                    $("#loading").show();
                     console.error("Request error: " + status);
                 }
             });
