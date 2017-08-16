@@ -45,7 +45,7 @@
 
     var CONST_DEFAULT_RELOAD_TIME = 1500; //1,5 Sekunden
     var CONST_RUNNING_RELOAD_TIME = 1500; //1,5 Sekunden
-    var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 400;
+    var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 750;
     var CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS = 10;
     var CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED = 15;
     var CONST_RECORDING_INTERVAL_PREVIOUS_POWERCONSUMPTION = 15 * 1000; // 600000 = 10 minutes
@@ -182,7 +182,7 @@
 
                     //console.log("IsInTime: " + isWithinTimeWindow());
 
-                    if (currentPower > 1000) {
+                    if (currentPower > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) {
                         console.log("Dishwasher is on with current power " + currentPower + " Milliwatt");
                         console.log("Transit from state '" + fsm.state + "' to 'started'");
                         fsm.start()
