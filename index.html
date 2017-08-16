@@ -43,15 +43,15 @@
 <script>
 
 
-    var CONST_DEFAULT_RELOAD_TIME = 1500; //1,5 Sekunden
-    var CONST_RUNNING_RELOAD_TIME = 1500; //1,5 Sekunden
-    var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 750;
-    var CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS = 10;
-    var CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED = 15;
-    var CONST_RECORDING_INTERVAL_PREVIOUS_POWERCONSUMPTION = 15 * 1000; // 600000 = 10 minutes
+    var CONST_DEFAULT_RELOAD_TIME = 2500; //2,5 Sekunden
+    var CONST_RUNNING_RELOAD_TIME = 2500; //2,5 Sekunden
+    var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 750; //75 Watt
+    var CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS = 10; //Canceling allowed
+    var CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED = 15; //15 * 1000 = 15 Seconds
+    var CONST_RECORDING_INTERVAL_PREVIOUS_POWERCONSUMPTION = 15 * 1000; // 15 * 1000 = 15 Seconds
 
     var dishwasherEmptied = false; //hold state of tiltswitch sensor
-    var startTime = 0; //Starttime of washing process
+    var startTime = -1; //Starttime of washing process
     var currentPower = 0; //most recent power consumption
     var previousPower = 0; //previous recorded power consumption
     var reloadTime = CONST_DEFAULT_RELOAD_TIME; //Time period, when data is fetched regularly
@@ -84,6 +84,7 @@
         init: 'stopped',
         transitions: [
             {name: 'start', from: 'stopped', to: 'started'},
+            {name: 'start', from: 'started', to: 'started'},
             {name: 'cleanup', from: 'started', to: 'cleaned'},
             {name: 'cleanup', from: 'cleaned', to: 'cleaned'},
             {name: 'end', from: 'cleaned', to: 'stopped'},
@@ -96,21 +97,23 @@
             onStart: function () {
                 console.log('Dishwasher started');
                 reloadTime = CONST_RUNNING_RELOAD_TIME;
-                startTime = getCurrentTimeInSeconds()
+                if (startTime == -1)
+                    startTime = getCurrentTimeInSeconds();
                 $("#show-busy").show();
                 $("#show-free").hide();
                 $("#show-ausraumen").hide();
                 $("#loading").hide();
             },
             onCleanup: function () {
-                console.log('Dishwasher is done and waits to get emptied')
+                console.log('Dishwasher is done and waits to get emptied');
                 $("#show-ausraumen").show();
                 $("#show-free").hide();
                 $("#show-busy").hide();
                 $("#loading").hide();
             },
             onEnd: function () {
-                console.log('Dishwasher is emptied and ready for a new run')
+                console.log('Dishwasher is emptied and ready for a new run');
+                startTime = -1 //Reset starttime
                 $("#show-free").show();
                 $("#show-busy").hide();
                 $("#show-ausraumen").hide();
@@ -156,11 +159,7 @@
 
                 },
                 error: function (xhr, status, error) {
-//                    $("#loading").show();
-//                    $("#show-free").hide();
-//                    $("#show-busy").hide();
-//                    $("#show-ausraumen").hide();
-                    console.error("Request error: " + status);
+                    console.error("Request error: Error while receiving Tiltswitch-Sensor-Service :" + status);
                 }
             });
 
@@ -173,13 +172,7 @@
                 method: 'GET',
                 success: function (response) {
 
-                    //on each success
-                    //var response = JSON.parse(data);
-                    $("#loading").hide();
                     currentPower = response.currentpower;
-                    //console.log("Jsonresponse is: " + JSON.stringify(response))
-
-
                     //console.log("IsInTime: " + isWithinTimeWindow());
 
                     if (currentPower > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) {
@@ -202,8 +195,6 @@
                             fsm.cleanup()
                         }
                     }
-                    else
-                        console.log("No condition satisfies")
 
                     if (dishwasherEmptied == true) {
                         console.log("Dishwasher is not runnning with current power " + response.currentpower + " Milliwatt.")
