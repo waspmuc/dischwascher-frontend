@@ -42,9 +42,8 @@
 <script src='lib/state-machine.js'></script>
 <script>
 
-
-    var CONST_DEFAULT_RELOAD_TIME = 2500; //2,5 Sekunden
-    var CONST_RUNNING_RELOAD_TIME = 2500; //2,5 Sekunden
+    var CONST_DEFAULT_RELOAD_TIME = 5000; //1000 = 1 Sekunde
+    var CONST_RUNNING_RELOAD_TIME = 10000; //1000 = 1 Sekunde
     var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 750; //75 Watt
     var CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS = 10; //Canceling allowed
     var CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED = 15; //15 * 1000 = 15 Seconds
@@ -113,7 +112,8 @@
             },
             onEnd: function () {
                 console.log('Dishwasher is emptied and ready for a new run');
-                startTime = -1 //Reset starttime
+                startTime = -1; //Reset starttime
+                reloadTime = CONST_DEFAULT_RELOAD_TIME;
                 $("#show-free").show();
                 $("#show-busy").hide();
                 $("#show-ausraumen").hide();
@@ -140,7 +140,7 @@
                 //url: 'http://localhost:10010/api/device/tiltswitchsensor', //Mock Development
                 url: 'http://192.168.40.101/api/tiltswitchsensorservice/',
                 dataType: 'json',
-                timeout: 6000,
+                timeout: reloadTime,
                 method: 'GET',
                 success: function (response) {
 
@@ -168,14 +168,14 @@
                 url: 'http://192.168.40.101/api/device/wemodischwascher',
                 //url: 'http://localhost:10010/api/device/wemodischwascher', //Mock Developmen
                 dataType: 'json',
-                timeout: 3000,
+                timeout: reloadTime,
                 method: 'GET',
                 success: function (response) {
 
                     currentPower = response.currentpower;
                     //console.log("IsInTime: " + isWithinTimeWindow());
 
-                    if (currentPower > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) {
+                    if (currentPower > 1000) {
                         console.log("Dishwasher is on with current power " + currentPower + " Milliwatt");
                         console.log("Transit from state '" + fsm.state + "' to 'started'");
                         fsm.start()
@@ -207,7 +207,8 @@
                     $("#show-busy").hide();
                     $("#show-ausraumen").hide();
                     $("#loading").show();
-                    console.error("Request error: " + status);
+                    console.error("Request error: Error while receiving Wemo-Sensor-Data :" + status);
+
                 }
             });
             setTimeout(worker, reloadTime);
