@@ -44,7 +44,8 @@
 
     var CONST_DEFAULT_RELOAD_TIME = 5000; //1000 = 1 Sekunde
     var CONST_RUNNING_RELOAD_TIME = 10000; //1000 = 1 Sekunde
-    var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 750; //75 Watt
+    var CONST_THRESHHOLD_CONSUMPTION_HIBERNATE = 750; //75 Watt
+    var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 1400;  //140 Watt
     var CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS = 10; //Canceling allowed
     var CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED = 15; //15 * 1000 = 15 Seconds
     var CONST_RECORDING_INTERVAL_PREVIOUS_POWERCONSUMPTION = 15 * 1000; // 15 * 1000 = 15 Seconds
@@ -175,20 +176,20 @@
                     currentPower = response.currentpower;
                     //console.log("IsInTime: " + isWithinTimeWindow());
 
-                    if (currentPower > 1000) {
+                    if (currentPower > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) {
                         console.log("Dishwasher is on with current power " + currentPower + " Milliwatt");
                         console.log("Transit from state '" + fsm.state + "' to 'started'");
                         fsm.start()
                     }
 
-                    else if (currentPower < CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING && isRunCancellable()) { //Reset unintended run
+                    else if (currentPower < CONST_THRESHHOLD_CONSUMPTION_HIBERNATE && isRunCancellable()) { //Reset unintended run
                         console.log("Reset app");
                         fsm.cleanup();
                         fsm.end();
                         location.reload();
                     }
 
-                    else if ((currentPower < CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) && (previousPower < CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING)) {
+                    else if ((currentPower < CONST_THRESHHOLD_CONSUMPTION_HIBERNATE) && (previousPower < CONST_THRESHHOLD_CONSUMPTION_HIBERNATE)) {
                         if ((dishwasherEmptied == false) && (fsm.state != "stopped")) {
                             console.log("Dishwasher is done and running with " + response.currentpower + " Milliwatt.")
                             console.log("Transit from state '" + fsm.state + "' to 'cleaned'")
