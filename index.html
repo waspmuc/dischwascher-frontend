@@ -5,7 +5,7 @@
     <title>Dishwasher Monitor</title>
     <style>
         .fit {
-            width: 73%;
+            width: 70%;
             heigth: auto;
             display: block;
             margin-left: auto;
@@ -20,6 +20,11 @@
             margin-left: auto;
             margin-right: auto;
             margin-top: 250px;
+        }
+
+        .chart{
+            position:absolute;
+            bottom:0;
         }
 
     </style>
@@ -38,8 +43,8 @@
     <img src="images/connecting.gif" width="200" alt="Busy" class="loader">
 </div>
 
-<div>
-    <canvas id="mycanvas" width="1920" height="250"></canvas>
+<div id="chartStream" style="display:block">
+    <canvas id="mycanvas" width="1900" height="220" class="chart"></canvas>
 </div>
 
 <script src="lib/jquery-3.1.1.js"></script>
