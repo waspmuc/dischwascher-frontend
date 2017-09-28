@@ -52,13 +52,13 @@
 <script src="lib/smoothie.js"></script>
 <script>
 
-    var CONST_DEFAULT_RELOAD_TIME = 5000; //1000 = 1 Sekunde
-    var CONST_RUNNING_RELOAD_TIME = 6000 * 1000; //1000 = 1 Sekunde --> 2 Minuten
-    var CONST_THRESHHOLD_CONSUMPTION_HIBERNATE = 750; //75 Watt
-    var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 1400;  //140 Watt
+    var CONST_DEFAULT_RELOAD_TIME = 5 * 1000 ; //1000 = 1 Sekunde
+    var CONST_RUNNING_RELOAD_TIME = 10 * 1000; //1000 = 1 Sekunde
+    var CONST_THRESHHOLD_CONSUMPTION_HIBERNATE = 75 * 1000; //1000 = 1 Watt
+    var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 14 * 1000;  //1000 = 1 Watt
     var CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS = 10; //Canceling allowed
     var CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED = 15; //15 * 1000 = 15 Seconds
-    var CONST_RECORDING_INTERVAL_PREVIOUS_POWERCONSUMPTION = 60 * 1000; // --> 60 Seconds
+    var CONST_RECORDING_INTERVAL_PREVIOUS_POWERCONSUMPTION = 300 * 1000; // Time between two valid measurement to transit to cleanup
 
     var dishwasherEmptied = false; //hold state of tiltswitch sensor
     var startTime = -1; //Starttime of washing process
@@ -72,9 +72,9 @@
         fsm.end(); // reset state machine on refresh
         var smoothie;
         smoothie = new SmoothieChart({
-            millisPerPixel: 100,
+            millisPerPixel: 500,
             scaleSmoothing: 0.189,
-            grid: {millisPerLine: 3000, verticalSections: 5},
+            grid: {millisPerLine: 10000, verticalSections: 5},
             tooltip: true,
             timestampFormatter: SmoothieChart.timeFormatter
         }),
@@ -248,16 +248,17 @@
             $.ajax({
                 url: 'http://192.168.40.101/api/device/wemodischwascher',
                 dataType: 'json',
-                timeout: 3000,
+                timeout: 6000,
                 method: 'GET',
                 success: function (response) {
-                    line1.append(new Date().getTime(), response.currentpower);
+                    line1.append(new Date().getTime(), response.currentpower / 1000);
+                    console.log("Chartaccess data is:" + response.currentpower / 1000);
                 },
                 error: function (xhr, status, error) {
                     console.error("Request error: Error while receiving Wemo-Sensor-Data :" + status);
                 }
             });
-        }, 3000);
+        }, 6000);
     });
 </script>
 </body>
