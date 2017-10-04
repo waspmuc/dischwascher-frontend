@@ -22,11 +22,10 @@
             margin-top: 250px;
         }
 
-        .chart{
-            position:absolute;
-            bottom:0;
+        .chart {
+            position: absolute;
+            bottom: 0;
         }
-
     </style>
 </head>
 <body>
@@ -52,7 +51,7 @@
 <script src="lib/smoothie.js"></script>
 <script>
 
-    var CONST_DEFAULT_RELOAD_TIME = 5 * 1000 ; //1000 = 1 Sekunde
+    var CONST_DEFAULT_RELOAD_TIME = 5 * 1000; //1000 = 1 Sekunde
     var CONST_RUNNING_RELOAD_TIME = 10 * 1000; //1000 = 1 Sekunde
     var CONST_THRESHHOLD_CONSUMPTION_HIBERNATE = 75 * 1000; //1000 = 1 Watt
     var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 14 * 1000;  //1000 = 1 Watt
@@ -200,6 +199,7 @@
                 success: function (response) {
 
                     currentPower = response.currentpower;
+                    line1.append(new Date().getTime(), response.currentpower / 1000);
                     //console.log("IsInTime: " + isWithinTimeWindow());
 
                     if (currentPower > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) {
@@ -238,27 +238,8 @@
 
                 }
             });
-
-
             setTimeout(worker, reloadTime);
         })();
-
-
-        setInterval(function () {
-            $.ajax({
-                url: 'http://192.168.40.101/api/device/wemodischwascher',
-                dataType: 'json',
-                timeout: 6000,
-                method: 'GET',
-                success: function (response) {
-                    line1.append(new Date().getTime(), response.currentpower / 1000);
-                    console.log("Chartaccess data is:" + response.currentpower / 1000);
-                },
-                error: function (xhr, status, error) {
-                    console.error("Request error: Error while receiving Wemo-Sensor-Data :" + status);
-                }
-            });
-        }, 6000);
     });
 </script>
 </body>
