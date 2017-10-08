@@ -51,24 +51,23 @@
 <script src="lib/smoothie.js"></script>
 <script>
 
-    var CONST_DEFAULT_RELOAD_TIME = 5 * 1000; //1000 = 1 Sekunde
+    var CONST_DEFAULT_RELOAD_TIME = 2 * 1000; //1000 = 1 Sekunde
     var CONST_RUNNING_RELOAD_TIME = 10 * 1000; //1000 = 1 Sekunde
-    var CONST_THRESHHOLD_CONSUMPTION_HIBERNATE = 75 * 1000; //1000 = 1 Watt
-    var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 14 * 1000;  //1000 = 1 Watt
-    var CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS = 10; //Canceling allowed
-    var CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED = 15; //15 * 1000 = 15 Seconds
-    var CONST_RECORDING_INTERVAL_PREVIOUS_POWERCONSUMPTION = 300 * 1000; // Time between two valid measurement to transit to cleanup
+    var CONST_THRESHHOLD_CONSUMPTION_HIBERNATE = 40; //in Watt
+    var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 10; // in Watt
+    var CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS = 20; // in seconds
+    var CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED = 15; // in seconds
+    var CONST_RECORDING_INTERVAL_PREVIOUS_POWERCONSUMPTION = 300; // in seconds
 
     var dishwasherEmptied = false; //hold state of tiltswitch sensor
     var startTime = -1; //Starttime of washing process
     var currentPower = 0; //most recent power consumption
-    var previousPower = 0; //previous recorded power consumption
+    var previousPower = [9999, 9999, 9999];
+    var previousPowerIndex = 0;
     var reloadTime = CONST_DEFAULT_RELOAD_TIME; //Time period, when data is fetched regularly
-    var refreshed = true;
     var line1;
 
     function init() {
-        fsm.end(); // reset state machine on refresh
         var smoothie;
         smoothie = new SmoothieChart({
             millisPerPixel: 500,
@@ -76,9 +75,9 @@
             grid: {millisPerLine: 10000, verticalSections: 5},
             tooltip: true,
             timestampFormatter: SmoothieChart.timeFormatter
-        }),
+        });
 
-            smoothie.streamTo(document.getElementById("mycanvas"), 1000);
+        smoothie.streamTo(document.getElementById("mycanvas"), 1000);
         // Data
         line1 = new TimeSeries();
         smoothie.addTimeSeries(line1, {strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3});
@@ -94,20 +93,27 @@
 
     setInterval(function () {
         storePowerInformation()
-    }, CONST_RECORDING_INTERVAL_PREVIOUS_POWERCONSUMPTION);
+    }, CONST_RECORDING_INTERVAL_PREVIOUS_POWERCONSUMPTION * 1000);
 
     function storePowerInformation() {
-        console.log("Storing power consumption information. PreviousPower: " + previousPower + " currentPower: " + currentPower);
-        previousPower = currentPower;
+        console.log("Storing power consumption information. PreviousPower was: " + previousPower.toString() + " Watt");
+        previousPower[previousPowerIndex] = currentPower;
+        if (previousPowerIndex == 2)
+            previousPowerIndex = 0;
+        else
+            previousPowerIndex++;
+        console.log("PreviousPower is now: " + previousPower.toString() + " Watt");
+
     }
 
     var fsm = new StateMachine({
-        init: 'stopped',
+        init: 'end',
         transitions: [
+            {name: 'start', from: 'end', to: 'started'},
             {name: 'start', from: 'stopped', to: 'started'},
             {name: 'start', from: 'started', to: 'started'},
-            {name: 'cleanup', from: 'started', to: 'cleaned'},
-            {name: 'cleanup', from: 'cleaned', to: 'cleaned'},
+            {name: 'cleanPending', from: 'started', to: 'cleanedPending'},
+            {name: 'clean', from: 'cleanedPending', to: 'cleaned'},
             {name: 'end', from: 'cleaned', to: 'stopped'},
             {name: 'end', from: 'stopped', to: 'stopped'},
             {name: 'reset', from: 'stopped', to: 'stopped'},
@@ -124,14 +130,26 @@
                 $("#show-free").hide();
                 $("#show-ausraumen").hide();
                 $("#loading").hide();
-                refreshed = false;
             },
-            onCleanup: function () {
+            onClean: function () {
+                console.log('Dishwasher is empty');
+                reloadTime = CONST_DEFAULT_RELOAD_TIME;
+                $("#show-free").show();
+                $("#show-busy").hide();
+                $("#show-ausraumen").hide();
+                $("#loading").hide();
+            },
+            onCleanPending: function () {
                 console.log('Dishwasher is done and waits to get emptied');
+                reloadTime = CONST_DEFAULT_RELOAD_TIME;
                 $("#show-ausraumen").show();
                 $("#show-free").hide();
                 $("#show-busy").hide();
                 $("#loading").hide();
+            },
+            onReset: function () {
+                console.log("Reset app");
+                location.reload();
             },
             onEnd: function () {
                 console.log('Dishwasher is emptied and ready for a new run');
@@ -141,15 +159,10 @@
                 $("#show-busy").hide();
                 $("#show-ausraumen").hide();
                 $("#loading").hide();
-                if (refreshed == false) {
-                    window.location.reload(true); //Refresh to prevent browser crash
-                    refreshed = true;
-                }
             },
 
             onInvalidTransition: function (transition, from, to) {
-                console.error("transition not allowed from state '" + from + "'."
-                )
+                console.error("transition not allowed from state '" + from + "'." + " to " + to);
             }
         }
     });
@@ -162,72 +175,76 @@
         console.log("Current state is: " + fsm.state);
         (function worker() {
 
+            if (fsm.state == "cleanedPending") {
+                $.ajax({
+                    url: 'http://localhost:10010/api/device/tiltswitchsensor', //Mock Development
+                    //url: 'http://192.168.40.101/api/tiltswitchsensorservice/',
+                    dataType: 'json',
+                    timeout: reloadTime,
+                    method: 'GET',
+                    success: function (response) {
+
+                        //var response = data;
+//                        console.log("response.currentState is: " + response.currentState);
+//                        console.log("response.lastChanged is: " + response.lastChanged);
+
+                        if (response.currentState == true) {
+                            console.log("Dishwasher is being emptied, but not yet done. " + (CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED - response.lastChanged) + " seconds to go.");
+                            if (response.lastChanged >= CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED) {
+                                dishwasherEmptied = true;
+                                console.log("Transit from state '" + fsm.state + "' to 'cleaned'");
+                                fsm.clean();
+                            }
+                        }
+
+                        else {
+                            dishwasherEmptied = false;
+                        }
+
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Request error: Error while receiving Tiltswitch-Sensor-Service :" + status);
+                    }
+                });
+            }
+
             $.ajax({
-                //url: 'http://localhost:10010/api/device/tiltswitchsensor', //Mock Development
-                url: 'http://192.168.40.101/api/tiltswitchsensorservice/',
+                //url: 'http://192.168.40.101/api/device/wemodischwascher',
+                url: 'http://localhost:10010/api/device/wemodischwascher', //Mock Development
                 dataType: 'json',
                 timeout: reloadTime,
                 method: 'GET',
                 success: function (response) {
 
-                    //var response = data;
-                    console.log("response.currentState is: " + response.currentState);
-                    console.log("response.lastChanged is: " + response.lastChanged);
+                    currentPower = (response.currentpower / 1000);
+                    line1.append(new Date().getTime(), currentPower);
 
-                    if (response.currentState == true && response.lastChanged >= CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED) {
-                        dishwasherEmptied = true;
-                        console.log("dishwasherEmptied is: " + dishwasherEmptied);
-                    }
-                    else {
-                        dishwasherEmptied = false;
-                        console.log("dishwasherEmptied is: " + dishwasherEmptied);
-                    }
-
-                },
-                error: function (xhr, status, error) {
-                    console.error("Request error: Error while receiving Tiltswitch-Sensor-Service :" + status);
-                }
-            });
-
-
-            $.ajax({
-                url: 'http://192.168.40.101/api/device/wemodischwascher',
-                //url: 'http://localhost:10010/api/device/wemodischwascher', //Mock Development
-                dataType: 'json',
-                timeout: reloadTime,
-                method: 'GET',
-                success: function (response) {
-
-                    currentPower = response.currentpower;
-                    line1.append(new Date().getTime(), response.currentpower / 1000);
-                    //console.log("IsInTime: " + isWithinTimeWindow());
-
-                    if (currentPower > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) {
-                        console.log("Dishwasher is on with current power " + currentPower + " Milliwatt");
+                    if (currentPower > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING && fsm.state != "started") {
+                        console.log("Dishwasher is on with current power " + currentPower + " Watt");
                         console.log("Transit from state '" + fsm.state + "' to 'started'");
-                        fsm.start()
+                        fsm.start();
                     }
 
-                    else if (currentPower < CONST_THRESHHOLD_CONSUMPTION_HIBERNATE && isRunCancellable()) { //Reset unintended run
-                        console.log("Reset app");
-                        fsm.cleanup();
-                        fsm.end();
-                        location.reload();
+                    else if (currentPower < CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING && isRunCancellable()) { //Reset unintended run
+                        fsm.reset();
                     }
 
-                    else if ((currentPower < CONST_THRESHHOLD_CONSUMPTION_HIBERNATE) && (previousPower < CONST_THRESHHOLD_CONSUMPTION_HIBERNATE)) {
-                        if ((dishwasherEmptied == false) && (fsm.state != "stopped")) {
-                            console.log("Dishwasher is done and running with " + response.currentpower + " Milliwatt.");
-                            console.log("Transit from state '" + fsm.state + "' to 'cleaned'");
-                            fsm.cleanup()
+                    else if (currentPower < CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING && fsm.state == "started") {
+                        var i, justPausing = false;
+                        for (i = 0; i < previousPower.length; i++) {
+                            if (previousPower[i] > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) {
+                                justPausing = true;
+                            }
+                        }
+                        if (justPausing == false) {
+                            console.log("Dishwasher is done and running with " + currentPower + " Watt.");
+                            console.log("Transit from state '" + fsm.state + "' to 'cleanedPending'");
+                            fsm.cleanPending();
                         }
                     }
 
-                    if (dishwasherEmptied == true) {
-                        console.log("Dishwasher is not runnning with current power " + response.currentpower + " Milliwatt.");
-                        console.log("Transit from state '" + fsm.state + "' to 'stopped'");
-                        fsm.end()
-                    }
+                    if (fsm.state == "cleaned")
+                        fsm.end();
                 },
                 error: function (xhr, status, error) {
                     $("#show-free").hide();
