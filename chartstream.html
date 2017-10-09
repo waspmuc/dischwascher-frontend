@@ -1,0 +1,81 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>The HTML5 Herald</title>
+    <meta name="description" content="The HTML5 Herald">
+    <meta name="author" content="SitePoint">
+
+    <style>
+
+        div.smoothie-chart-tooltip {
+            background: #444;
+            padding: 1em;
+            margin-top: 20px;
+            font-family: consolas;
+            color: white;
+            font-size: 10px;
+            pointer-events: none;
+        }
+
+    </style>
+
+</head>
+
+<body>
+<script type="text/javascript" src="lib/smoothie.js"></script>
+<script type="text/javascript" src="lib/jquery-3.1.1.js"></script>
+
+<h1>Chart</h1>
+<canvas id="mycanvas" width="1900" height="300"></canvas>
+
+<script>
+
+
+    smoothie = new SmoothieChart({
+        millisPerPixel: 100,
+        scaleSmoothing: 0.189,
+        grid: {millisPerLine: 3000, verticalSections: 5},
+        tooltip: true,
+        timestampFormatter: SmoothieChart.timeFormatter
+    }),
+
+        smoothie.streamTo(document.getElementById("mycanvas"), 1000);
+    // Data
+    var line1 = new TimeSeries();
+    var line2 = new TimeSeries();
+
+    var currentPower = 0;
+    var tiltswitchState = false;
+
+    // Add a random value to each line every second
+    setInterval(function () {
+        $.ajax({
+            url: 'http://192.168.40.101/api/device/wemodischwascher',
+            //url: 'http://localhost:10010/api/device/wemodischwascher', //Mock Developmen
+            dataType: 'json',
+            timeout: 1000,
+            method: 'GET',
+            success: function (response) {
+
+                currentPower = response.currentpower;
+            },
+            error: function (xhr, status, error) {
+                console.error("Request error: Error while receiving Wemo-Sensor-Data :" + status);
+            }
+        });
+
+        line1.append(new Date().getTime(), currentPower);
+        //line2.append(new Date().getTime(), tiltswitchState);
+    }, 1000);
+
+    // Add to SmoothieChart
+    smoothie.addTimeSeries(line1, {strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3});
+    smoothie.addTimeSeries(line2, {strokeStyle: 'rgb(244, 164, 66)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3});
+
+</script>
+
+
+</body>
+</html>
