@@ -14,12 +14,13 @@
         }
 
         .loader {
-            width: 20%;
+            width: 10%;
+            position: absolute;
             heigth: auto;
             display: block;
-            margin-left: auto;
+            margin-left: 45%;
             margin-right: auto;
-            margin-top: 250px;
+            margin-top: 20%;
         }
 
         .chart {
@@ -29,6 +30,9 @@
     </style>
 </head>
 <body>
+<div id="loading">
+    <img src="images/connecting.gif" width="200" alt="Busy" class="loader">
+</div>
 <div id="show-free" style="display:none">
     <img src="images/free.jpg" alt="Free" class="fit">
 </div>
@@ -38,10 +42,6 @@
 <div id="show-ausraumen" style="display:none">
     <img src="images/ausraumen.jpg" alt="ausraumen" class="fit">
 </div>
-<div id="loading" style="display:block">
-    <img src="images/connecting.gif" width="200" alt="Busy" class="loader">
-</div>
-
 <div id="chartStream" style="display:block">
     <canvas id="mycanvas" width="1900" height="220" class="chart"></canvas>
 </div>
@@ -113,6 +113,7 @@
             {name: 'start', from: 'stopped', to: 'started'},
             {name: 'start', from: 'started', to: 'started'},
             {name: 'cleanPending', from: 'started', to: 'cleanedPending'},
+            {name: 'cleanPending', from: 'cleanedPending', to: 'cleanedPending'},
             {name: 'clean', from: 'cleanedPending', to: 'cleaned'},
             {name: 'end', from: 'cleaned', to: 'stopped'},
             {name: 'end', from: 'stopped', to: 'stopped'},
@@ -212,10 +213,11 @@
                 method: 'GET',
                 success: function (response) {
 
+                    $("#loading").hide();
                     currentPower = (response.currentpower / 1000);
                     line1.append(new Date().getTime(), currentPower);
 
-                    if (currentPower > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING && fsm.state != "started") {
+                    if (currentPower > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) {
                         console.log("Dishwasher is on with current power " + currentPower + " Watt");
                         console.log("Transit from state '" + fsm.state + "' to 'started'");
                         fsm.start();
@@ -225,7 +227,7 @@
                         fsm.reset();
                     }
 
-                    else if (currentPower < CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING && fsm.state == "started") {
+                    else if (currentPower < CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) {
                         var i, justPausing = false;
                         for (i = 0; i < previousPower.length; i++) {
                             if (previousPower[i] > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) {
@@ -241,11 +243,9 @@
 
                     if (fsm.state == "cleaned")
                         fsm.end();
+
                 },
                 error: function (xhr, status, error) {
-                    $("#show-free").hide();
-                    $("#show-busy").hide();
-                    $("#show-ausraumen").hide();
                     $("#loading").show();
                     console.error("Request error: Error while receiving Wemo-Sensor-Data :" + status);
 
