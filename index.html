@@ -66,45 +66,8 @@
     var previousPowerIndex = 0;
     var reloadTime = CONST_DEFAULT_RELOAD_TIME;
     var line1;
+    var errorCounterWemo = 0, errorCounterTiltSwitch = 0;
 
-    function init() {
-        var smoothie;
-        smoothie = new SmoothieChart({
-            millisPerPixel: 500,
-            scaleSmoothing: 0.189,
-            grid: {millisPerLine: 10000, verticalSections: 5},
-            tooltip: true,
-            timestampFormatter: SmoothieChart.timeFormatter
-        });
-
-        smoothie.streamTo(document.getElementById("mycanvas"), 1000);
-        // Data
-        line1 = new TimeSeries();
-        smoothie.addTimeSeries(line1, {strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3});
-    }
-
-    function isRunCancellable() {
-        return getCurrentTimeInSeconds() <= startTime + CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS;
-    }
-
-    function getCurrentTimeInSeconds() {
-        return Math.round(new Date() / 1000);
-    }
-
-    setInterval(function () {
-        storePowerInformation()
-    }, CONST_RECORDING_INTERVAL_PREVIOUS_POWERCONSUMPTION * 1000);
-
-    function storePowerInformation() {
-        console.log("Storing power consumption information. PreviousPower was: " + previousPower.toString() + " Watt");
-        previousPower[previousPowerIndex] = currentPower;
-        if (previousPowerIndex == 2)
-            previousPowerIndex = 0;
-        else
-            previousPowerIndex++;
-        console.log("PreviousPower is now: " + previousPower.toString() + " Watt");
-
-    }
 
     var fsm = new StateMachine({
         init: 'end',
@@ -163,10 +126,52 @@
             },
 
             onInvalidTransition: function (transition, from, to) {
-                console.error("transition not allowed from state '" + from + "'." + " to " + to);
+                console.error("transition not allowed from state '" + from + "'.");
             }
         }
     });
+
+    function init() {
+        var smoothie;
+        smoothie = new SmoothieChart({
+            millisPerPixel: 500,
+            scaleSmoothing: 0.189,
+            grid: {millisPerLine: 10000, verticalSections: 5},
+            tooltip: true,
+            timestampFormatter: SmoothieChart.timeFormatter
+        });
+
+        smoothie.streamTo(document.getElementById("mycanvas"), 1000);
+        // Data
+        line1 = new TimeSeries();
+        smoothie.addTimeSeries(line1, {strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3});
+    }
+
+    function isRunCancellable() {
+        return getCurrentTimeInSeconds() <= startTime + CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS;
+    }
+
+    function getCurrentTimeInSeconds() {
+        return Math.round(new Date() / 1000);
+    }
+
+    setInterval(function () {
+        storePowerInformation()
+    }, CONST_RECORDING_INTERVAL_PREVIOUS_POWERCONSUMPTION * 1000);
+
+    function storePowerInformation() {
+        if (fsm.state == "started") {
+            console.log("Storing power consumption information. PreviousPower was: " + previousPower.toString() + " Watt");
+            previousPower[previousPowerIndex] = currentPower;
+            if (previousPowerIndex == 2)
+                previousPowerIndex = 0;
+            else
+                previousPowerIndex++;
+
+            console.log("PreviousPower is now: " + previousPower.toString() + " Watt");
+        }
+
+    }
 
 
     $(document).ready(function () {
@@ -185,6 +190,7 @@
                     method: 'GET',
                     success: function (response) {
 
+                        $("#loading").hide();
                         if (response.currentState == true) {
                             console.log("Dishwasher is being emptied, but not yet done. " + (CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED - response.lastChanged) + " seconds to go.");
                             if (response.lastChanged >= CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED) {
@@ -200,7 +206,15 @@
 
                     },
                     error: function (xhr, status, error) {
+                        $("#loading").show();
                         console.error("Request error: Error while receiving Tiltswitch-Sensor-Service :" + status);
+                        if(errorCounterTiltSwitch == 0)
+                            firstTiltSwitchErrorOccuredAt = getCurrentTimeInSeconds();
+                        if(errorCounterTiltSwitch > 10 && (firstTiltSwitchErrorOccuredAt <= getCurrentTimeInSeconds() + 60)){
+                            console.log("More than 10 errors per minute while connecting tiltswitch sensor. Reload page.")
+                            location.reload();
+                        }
+                        errorCounterTiltSwitch++;
                     }
                 });
             }
@@ -224,6 +238,7 @@
                     }
 
                     else if (currentPower < CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING && isRunCancellable()) {
+                        console.log("Run is cancable and now canceled.");
                         fsm.reset();
                     }
 
@@ -232,6 +247,7 @@
                         for (i = 0; i < previousPower.length; i++) {
                             if (previousPower[i] > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) {
                                 justPausing = true;
+                                console.log("Not done yet, just pausing. PreviousPower is " + previousPower.toString());
                             }
                         }
                         if (justPausing == false) {
@@ -241,14 +257,23 @@
                         }
                     }
 
-                    if (fsm.state == "cleaned")
+                    if (fsm.state == "cleaned"){
+                        console.log("Dishwasher is clean.");
+                        console.log("Transit from state '" + fsm.state + "' to 'end'");
                         fsm.end();
+                    }
 
                 },
                 error: function (xhr, status, error) {
                     $("#loading").show();
                     console.error("Request error: Error while receiving Wemo-Sensor-Data :" + status);
-
+                    if(errorCounterWemo == 0)
+                        firstWemoErrorOccuredAt = getCurrentTimeInSeconds();
+                    if(errorCounterWemo > 10 && (firstWemoErrorOccuredAt <= getCurrentTimeInSeconds() + 60)){
+                        console.log("More than 10 errors per minute while connecting Wemo. Reload page.")
+                        location.reload();
+                    }
+                    errorCounterWemo++;
                 }
             });
             setTimeout(worker, reloadTime);
