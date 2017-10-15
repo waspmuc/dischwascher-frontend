@@ -1,4 +1,4 @@
-## Dishwasher Statuspage
+## Dishwasher Statuspage @Jambit
 
 ### Motivation
 I'm working at a midsized company with a community kitchen and a single dishwasher. Our dishwasher's user interface is not visible once the door is closed, hence there is no status information available, when it is on duty or not. Accordingly when a wash cycle is finished, nobody will know, that it is finished, hence nobody will empty the dishwasher. Another annoying example is when my colleagues want to behave like their mother tought them and they put the dirty plates in the dishwasher while it is running. Meant well, but it's not working.
@@ -10,6 +10,8 @@ As a first attempt our team assistances printed signs with "running" and "not ru
 The idea was pretty clear how to solve this issue: "We need to meassure the energy consumption and then we can decide, if it's running or not and show the current status on a display." me and my colleagus said. Thats easier sad than done, but in the end I found a pretty neat solution.  
 
 ### Architecture
+
+<rect x="78" y="90" class="highlight" width="139" height="120"></rect><line x1="150" y1="227" x2="150" y2="330" class="highlight"></line><circle cx="415" cy="285" class="highlight" r="45"></circle><circle cx="412.5" cy="187.5" class="regular" r="37.5"></circle><rect x="240" y="180" class="regular" width="120" height="90"></rect>
 
 
 
