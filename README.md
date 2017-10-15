@@ -1,37 +1,18 @@
-## Welcome to GitHub Pages
+## Dishwasher Statuspage
 
-You can use the [editor on GitHub](https://github.com/waspmuc/dischwascher-frontend/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+### Motivation
+I'm working at a midsized company with a community kitchen and a single dishwasher. Our dishwasher's user interface is not visible once the door is closed, hence there is no status information available, when it is on duty or not. Accordingly when a wash cycle is finished, nobody will know, that it is finished, hence nobody will empty the dishwasher. Another annoying example is when my colleagues want to behave like their mother tought them and they put the dirty plates in the dishwasher while it is running. Meant well, but it's not working.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+As a consequence nobody wants to open the dishwasher when the door is closed and the plates and mugs are just added on another on the kitchen tray. At around 4 o'clock in the afternoon you will lose every interest in a nice cappucino when this mess welcomes you. 
 
-### Markdown
+As a first attempt our team assistances printed signs with "running" and "not running" which was a good idea, but the status was hardly in sync to the real status, since you had to flip them manually. 
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+The idea was pretty clear how to solve this issue: "We need to meassure the energy consumption and then we can decide, if it's running or not and show the current status on a display." me and my colleagus said. Thats easier sad than done, but in the end I found a pretty neat solution.  
 
-```markdown
-Syntax highlighted code block
+### Architecture
 
-# Header 1
-## Header 2
-### Header 3
 
-- Bulleted
-- List
 
-1. Numbered
-2. List
+## Contribute and participate
 
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/waspmuc/dischwascher-frontend/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+I'd be very happy, if you like to support my project. If you have any ideas just contact me in person or submit an issue. 
