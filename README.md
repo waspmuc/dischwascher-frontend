@@ -10,9 +10,9 @@ As a first attempt our team assistances printed signs with "running" and "not ru
 The idea was pretty clear how to solve this issue: "We need to meassure the energy consumption and then we can decide, if it's running or not and show the current status on a display." me and my colleagus said. Thats easier sad than done, but in the end I found a pretty neat solution.  
 
 ### Architecture
-
+<svg>
 <rect x="78" y="90" class="highlight" width="139" height="120"></rect><line x1="150" y1="227" x2="150" y2="330" class="highlight"></line><circle cx="415" cy="285" class="highlight" r="45"></circle><circle cx="412.5" cy="187.5" class="regular" r="37.5"></circle><rect x="240" y="180" class="regular" width="120" height="90"></rect>
-
+</svg>
 
 
 ## Contribute and participate
