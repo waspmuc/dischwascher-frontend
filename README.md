@@ -72,7 +72,7 @@ different programs the dishwasher is offering and show live data/movement on the
 going. :)
 
 ### Real world implementation
-![dishwasher](/doc/ressources/dishwasherLive.png =250x)
+<img src="/doc/ressources/dishwasherLive.png" width="50%">
 
 
 ## Contribute and participate
