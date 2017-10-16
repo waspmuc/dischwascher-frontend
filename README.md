@@ -12,6 +12,7 @@ The idea was pretty clear how to solve this issue: "We need to meassure the ener
 ### Architecture
 
 ![HarwareOverview](doc/ressources/HardwareOverview.png "HardwareOverview")
+![SoftwareOverview](doc/ressources/SoftwareArchitectureOverview.png "SoftwareOverview")
 
 ## Contribute and participate
 
