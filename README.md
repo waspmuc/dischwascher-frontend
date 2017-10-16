@@ -11,7 +11,7 @@ As a consequence nobody wants to open the dishwasher when the door is closed and
 another on the kitchen tray. At around 4 o'clock in the afternoon you will lose every interest in a nice cappucino when 
 this mess welcomes you. 
 
-As a first attempt our team assistances printed signs with "running" and "not running" which was a good idea, but the 
+As a first attempt our team assistances printed signs with "running" and "not running" which was a good idea though, but the 
 status was hardly in sync to the real status, since you had to flip them manually. 
 
 The idea was pretty clear how to solve this issue: "We need to meassure the energy consumption and then we can decide, 
@@ -55,8 +55,8 @@ Once the monitor detects that a run is finished, it transits to `emptyPending` a
 someone opens the door to empty the fresh and clean plates the
  [tiltswitch-sensor-service](https://github.com/waspmuc/tiltswitch-sensor-service)
 will deliver the current state of it's tiltswitch sensor. The sensor response is `true`, when the door is completely 
-opened. After 15 seconds the monitor assumed the dishwasher is empty and ready for a new run and transits to its state 
-`cleaned` and finally back to `not runnning`.  
+opened. After 15 seconds the monitor assumes the dishwasher is empty and ready for a new run and transits to its state 
+`cleaned` and finally back to `NotRunnning`.  
 
 ### Architecture
 
@@ -68,7 +68,12 @@ To investigate typical patterns of power consumption in order to configure the t
 implemented a [data-service](https://github.com/waspmuc/dischwascher-data-service)
 which sends request to ouimeaux and stores it's responses in MongoDB. After that I visualized the data with 
 [chartist](https://gionkunz.github.io/chartist-js/). It could be interesting to store multiple runs with the existing 
-different programs the dishwasher is offering and show live data/movement on the chart itself. 
+different programs the dishwasher is offering and show live data/movement on the chart itself. We'll see were this is 
+going. :)
+
+### Real world implementation
+![dishwasher](/doc/ressources/dishwasherLive.png)
+
 
 ## Contribute and participate
 
