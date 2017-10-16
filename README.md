@@ -9,6 +9,9 @@ As a first attempt our team assistances printed signs with "running" and "not ru
 
 The idea was pretty clear how to solve this issue: "We need to meassure the energy consumption and then we can decide, if it's running or not and show the current status on a display." me and my colleagus said. Thats easier sad than done, but in the end I found a pretty neat solution.  
 
+### How does it work?
+[Wemo Switch Insight](http://www.belkin.com/de/p/P-F7C029/) offers a rich set of information which is exposed via its own mobile app - which is not that helpful in this case - and via its open [API](http://ouimeaux.readthedocs.io/en/latest/). The raw data can be accessed via UPnP, hence 
+
 ### Architecture
 
 ![HarwareOverview](doc/ressources/HardwareOverview.png "HardwareOverview")
