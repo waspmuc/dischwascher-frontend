@@ -10,16 +10,8 @@ As a first attempt our team assistances printed signs with "running" and "not ru
 The idea was pretty clear how to solve this issue: "We need to meassure the energy consumption and then we can decide, if it's running or not and show the current status on a display." me and my colleagus said. Thats easier sad than done, but in the end I found a pretty neat solution.  
 
 ### Architecture
-+-----------------+
-|                 |
-|                 |
-|   Wemo-Adapter  |
-|                 |
-|                 |
-|                 |
-|                 |
-+-----------------+
 
+![HarwareOverview](doc/ressources/HardwareOverview.png "HardwareOverview")
 
 ## Contribute and participate
 
