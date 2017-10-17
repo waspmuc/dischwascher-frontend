@@ -53,7 +53,6 @@
 
     var CONST_DEFAULT_RELOAD_TIME = 2 * 1000; //1000 = 1 Sekunde
     var CONST_RUNNING_RELOAD_TIME = 10 * 1000; //1000 = 1 Sekunde
-    var CONST_THRESHHOLD_CONSUMPTION_HIBERNATE = 40; //in Watt
     var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 10; // in Watt
     var CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS = 30; // in seconds
     var CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED = 15; // in seconds
@@ -62,11 +61,11 @@
     var dishwasherEmptied = false; //hold state of tiltswitch sensor
     var startTime = -1; //Starttime of washing process
     var currentPower = 0;
-    var previousPower = [9999, 9999, 9999];
-    var previousPowerIndex = 0;
-    var reloadTime = CONST_DEFAULT_RELOAD_TIME;
-    var line1;
-    var errorCounterWemo = 0, errorCounterTiltSwitch = 0;
+    var previousPower = [9999, 9999, 9999]; //stores previous power values for comparison
+    var previousPowerIndex = 0; //array index which entry is addressed
+    var reloadTime = CONST_DEFAULT_RELOAD_TIME; //reload time for ajax-calls
+    var chartLineConsumption; //data model for charts
+    var errorCounterWemo = 0, errorCounterTiltSwitch = 0; //counter for errors on ajax-calls
 
 
     var fsm = new StateMachine({
@@ -143,8 +142,8 @@
 
         smoothie.streamTo(document.getElementById("mycanvas"), 1000);
         // Data
-        line1 = new TimeSeries();
-        smoothie.addTimeSeries(line1, {strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3});
+        chartLineConsumption = new TimeSeries();
+        smoothie.addTimeSeries(chartLineConsumption, {strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3});
     }
 
     function isRunCancellable() {
@@ -170,10 +169,9 @@
 
             console.log("PreviousPower is now: " + previousPower.toString() + " Watt");
         }
-
     }
 
-
+//########## Status Loop ###########
     $(document).ready(function () {
 
         init();
@@ -229,7 +227,7 @@
 
                     $("#loading").hide();
                     currentPower = (response.currentpower / 1000);
-                    line1.append(new Date().getTime(), currentPower);
+                    chartLineConsumption.append(new Date().getTime(), currentPower);
 
                     if (currentPower > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) {
                         console.log("Dishwasher is on with current power " + currentPower + " Watt");
