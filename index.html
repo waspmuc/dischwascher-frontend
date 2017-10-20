@@ -194,7 +194,11 @@
                     success: function (response) {
 
                         console.log("Receiving status from tilt-switch-sensor-service.");
+
+                        //reset error handling values
                         $("#loading").hide();
+                        errorCounterTiltSwitch = 0;
+
                         if (response.currentState == true) {
                             console.log("Dishwasher is being emptied, but not done yet. " + (CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED - response.lastChanged) + " seconds to go.");
                             if (response.lastChanged >= CONST_TIMEWINDOW_FOR_ASSUMING_DISHWASHER_IS_EMPTIED) {
@@ -233,7 +237,10 @@
                 method: 'GET',
                 success: function (response) {
 
+                    //reset error handling values
                     $("#loading").hide();
+                    errorCounterWemo = 0;
+
                     currentPower = (response.currentpower / 1000);
                     console.log("Current power is: " + currentPower + " Watt");
                     console.log("Previous power is " + previousPower.toString());
