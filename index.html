@@ -101,6 +101,7 @@
                 $("#show-busy").hide();
                 $("#show-ausraumen").hide();
                 $("#loading").hide();
+                location.reload();
             },
             onCleanPending: function () {
                 console.log('Dishwasher is done and waits to get emptied');
@@ -122,7 +123,6 @@
                 $("#show-busy").hide();
                 $("#show-ausraumen").hide();
                 $("#loading").hide();
-                location.reload();
             },
 
             onInvalidTransition: function (transition, from, to) {
@@ -201,6 +201,8 @@
                                 dishwasherEmptied = true;
                                 console.log("Transit from state '" + fsm.state + "' to 'cleaned'");
                                 fsm.clean();
+                                console.log("Done emptying...reload now!");
+                                location.reload();
                             }
                         }
 
@@ -234,6 +236,7 @@
                     $("#loading").hide();
                     currentPower = (response.currentpower / 1000);
                     console.log("Current power is: " + currentPower + " Watt");
+                    console.log("Previous power is " + previousPower.toString());
                     chartLineConsumption.append(new Date().getTime(), currentPower);
 
                     if (currentPower > CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING) {
