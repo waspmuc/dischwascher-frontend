@@ -51,7 +51,7 @@
 <script src="lib/smoothie.js"></script>
 <script>
 
-    var CONST_DEFAULT_RELOAD_TIME = 2 * 1000; //1000 = 1 Sekunde
+    var CONST_DEFAULT_RELOAD_TIME = 5 * 1000; //1000 = 1 Sekunde
     var CONST_RUNNING_RELOAD_TIME = 10 * 1000; //1000 = 1 Sekunde
     var CONST_THRESHHOLD_CONSUMPTION_NOT_RUNNING = 10; // in Watt
     var CONST_TIMEWINDOW_FOR_CANCEL_START_IN_SECONDS = 30; // in seconds
@@ -63,7 +63,7 @@
     var currentPower = 0;
     var previousPower = [9999, 9999, 9999]; //stores previous power values for comparison
     var previousPowerIndex = 0; //array index which entry is addressed
-    var reloadTime = CONST_DEFAULT_RELOAD_TIME; //reload time for ajax-calls
+    var reloadTime = 8 * 1000; //reload time for ajax-calls
     var chartLineConsumption; //data model for charts
     var errorCounterWemo = 0, errorCounterTiltSwitch = 0; //counter for errors on ajax-calls
 
@@ -287,8 +287,8 @@
                     console.error("Request error: Error while receiving Wemo-Sensor-Data :" + status);
                     if (errorCounterWemo == 0)
                         firstWemoErrorOccuredAt = getCurrentTimeInSeconds();
-                    if (errorCounterWemo > 10 && (firstWemoErrorOccuredAt <= getCurrentTimeInSeconds() + 60)) {
-                        console.log("More than 10 errors per minute while connecting Wemo. Reload page.")
+                    if (errorCounterWemo > 30 && (firstWemoErrorOccuredAt <= getCurrentTimeInSeconds() + 120)) {
+                        console.log("More than 30 errors per minute while connecting Wemo. Reload page.")
                         location.reload();
                     }
                     errorCounterWemo++;
